@@ -313,7 +313,7 @@ def run_on_ibm(circuit: QuantumCircuit, backend_name: str | None, shots: int,
     return dict(sorted(probabilities.items(), key=lambda item: -item[1]))
 
 
-def plot_circuit(circuit: QuantumCircuit, reps: int) -> None:
+def plot_circuit(circuit: QuantumCircuit, reps: int, filename: str = "qaoa_circuit.png") -> None:
     """
     QAOA-Schaltkreis mit den optimierten Winkeln (plus Messung am Ende,
     wie er auf echter Hardware laufen würde). Barriers trennen die Layer.
@@ -324,8 +324,8 @@ def plot_circuit(circuit: QuantumCircuit, reps: int) -> None:
     """
     circuit_fig = circuit.measure_all(inplace=False).draw("mpl", fold=40)
     circuit_fig.suptitle(f"QAOA-Schaltkreis (p = {reps}, optimierte Winkel)", fontsize=24)
-    circuit_fig.savefig("qaoa_circuit.png", dpi=100, bbox_inches="tight")
-    print("\nSchaltkreis gespeichert: qaoa_circuit.png")
+    circuit_fig.savefig(filename, dpi=100, bbox_inches="tight")
+    print(f"Schaltkreis gespeichert: {filename}")
 
 
 def main() -> None:
@@ -390,8 +390,9 @@ def main() -> None:
     if args.plot:
         import matplotlib.pyplot as plt
 
-        plot_prices(problem.data, x_qa, ", QAOA")
-        plot_circuit(info["circuit"], args.reps)
+        suffix = f"{problem.n}_{problem.k}"
+        plot_prices(problem.data, x_qa, ", QAOA", f"kurse_qaoa_{suffix}.png")
+        plot_circuit(info["circuit"], args.reps, f"qaoa_circuit_{suffix}.png")
         plt.show()
 
 

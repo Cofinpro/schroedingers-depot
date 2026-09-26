@@ -275,8 +275,12 @@ def print_distribution(probabilities: dict[tuple, float], x_opt: np.ndarray | No
         print(f"    {''.join(map(str, x))}  p = {p:6.2%}  E = {qubo_energy(x, Q, constant):+.4f}{marker}")
 
 
-def plot_prices(data: MarketData, x_opt: np.ndarray, title_suffix: str = "") -> None:
-    """Normierte Kursverläufe; Aktien im Depot durchgezogen, der Rest gepunktet."""
+def plot_prices(data: MarketData, x_opt: np.ndarray, title_suffix: str = "",
+                filename: str | None = None) -> None:
+    """
+    Normierte Kursverläufe; Aktien im Depot durchgezogen, der Rest gepunktet.
+    Mit filename wird die Grafik zusätzlich als PNG gespeichert.
+    """
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(figsize=(10, 5))
@@ -288,6 +292,9 @@ def plot_prices(data: MarketData, x_opt: np.ndarray, title_suffix: str = "") -> 
     ax.set_ylabel("Kurs / Startkurs")
     ax.legend(ncol=4)
     plt.tight_layout()
+    if filename:
+        fig.savefig(filename, dpi=100)
+        print(f"Kursverläufe gespeichert: {filename}")
 
 
 # =============================================================================

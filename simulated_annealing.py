@@ -94,7 +94,7 @@ def main() -> None:
     if args.plot:
         import matplotlib.pyplot as plt
 
-        plot_prices(problem.data, x, ", Simulated Annealing")
+        plot_prices(problem.data, x, ", Simulated Annealing", f"kurse_simulated_annealing_{problem.n}_{problem.k}.png")
         plt.show()
 
 

@@ -24,7 +24,7 @@ import time
 
 import numpy as np
 
-from brute_force import solve_brute_force
+from brute_force import energy_rank, solve_brute_force
 from portfolio_common import (describe_portfolio, make_parser, plot_prices, print_distribution,
                               qubo_energy, setup_problem)
 from qaoa import plot_circuit, run_on_ibm, solve_qaoa
@@ -46,6 +46,10 @@ def main() -> None:
     problem = setup_problem(args, parser)
     Q, constant, k, data = problem.Q, problem.constant, problem.k, problem.data
 
+    def print_rank(x: np.ndarray) -> None:
+        """Platz des gewählten Depots in der Brute-Force-Rangliste (1 = optimal)."""
+        print(f"  Rang laut Brute Force: Platz {energy_rank(x, Q, constant):,} von {2**problem.n:,} Depots")
+
     print("\n" + "=" * 78)
     print("Ergebnisse")
     print("=" * 78)
@@ -63,6 +67,7 @@ def main() -> None:
     print(f"Simulated Annealing E = {e_sa:+.4f}  x = {x_sa}")
     print(f"Time: {end - start:.3f}s")
     print(f"                    {describe_portfolio(x_sa, data)}")
+    print_rank(x_sa)
 
     print(f"\nQAOA läuft (p = {args.reps}, {problem.n} Qubits) …")
     start = time.time()
@@ -71,6 +76,7 @@ def main() -> None:
     print(f"QAOA                E = {e_qa:+.4f}  x = {x_qa}")
     print(f"Time: {end - start:.3f}s")
     print(f"                    {describe_portfolio(x_qa, data)}")
+    print_rank(x_qa)
     gate_counts = ", ".join(f"{g}: {c}" for g, c in info["circuit"].count_ops().items() if g != "barrier")
     print(f"  Schaltkreis: {gate_counts}  (Tiefe {info['circuit_depth']})")
     print(f"  ⟨H⟩ nach Optimierung: {info['expectation']:+.4f}")
@@ -88,13 +94,15 @@ def main() -> None:
                    key=lambda x: qubo_energy(x, Q, constant))
         print(f"QAOA (Hardware)     E = {qubo_energy(x_hw, Q, constant):+.4f}  x = {x_hw}")
         print(f"                    {describe_portfolio(x_hw, data)}")
+        print_rank(x_hw)
         print_distribution(hw_probabilities, x_bf, k, Q, constant)
 
     if args.plot:
         import matplotlib.pyplot as plt
 
-        plot_prices(data, x_bf, ", optimal")
-        plot_circuit(info["circuit"], args.reps)
+        suffix = f"{problem.n}_{k}"
+        plot_prices(data, x_bf, ", optimal", f"kurse_{suffix}.png")
+        plot_circuit(info["circuit"], args.reps, f"qaoa_circuit_{suffix}.png")
         plt.show()
 
 

@@ -48,20 +48,41 @@ def solve_brute_force(Q: np.ndarray, constant: float,
     (dieselbe Konvention wie bei den Qubits in Qiskit).
     """
     n = Q.shape[0]
-    chunk = 2 ** min(n, chunk_bits)
     bit_positions = np.arange(n)
     best_idx, best_e = -1, np.inf
 
-    for start in range(0, 2**n, chunk):
-        idx = np.arange(start, start + chunk, dtype=np.int64)
-        X = ((idx[:, None] >> bit_positions) & 1).astype(np.float64)
-        energies = ((X @ Q) * X).sum(axis=1) + constant
+    for start, energies in iter_energies(Q, constant, chunk_bits):
         i = int(np.argmin(energies))
         if energies[i] < best_e:
             best_idx, best_e = start + i, float(energies[i])
 
     best_x = (best_idx >> bit_positions) & 1
     return best_x, best_e
+
+
+def iter_energies(Q: np.ndarray, constant: float, chunk_bits: int = 20):
+    """
+    Liefert die QUBO-Energien aller 2^N Depots blockweise als (Startindex, Energien).
+    Energien[j] gehört zu Depot Nummer Startindex + j.
+    """
+    n = Q.shape[0]
+    chunk = 2 ** min(n, chunk_bits)
+    bit_positions = np.arange(n)
+    for start in range(0, 2**n, chunk):
+        idx = np.arange(start, start + chunk, dtype=np.int64)
+        X = ((idx[:, None] >> bit_positions) & 1).astype(np.float64)
+        yield start, ((X @ Q) * X).sum(axis=1) + constant
+
+
+def energy_rank(x: np.ndarray, Q: np.ndarray, constant: float, tol: float = 1e-9) -> int:
+    """
+    Platz des Depots x in der Rangliste aller 2^N Depots, sortiert nach Energie
+    (Platz 1 = optimal). Gezählt wird, wie viele Depots eine echt kleinere
+    Energie haben; Depots mit gleicher Energie teilen sich denselben Platz.
+    """
+    e = float(x @ Q @ x + constant)
+    better = sum(int((energies < e - tol).sum()) for _, energies in iter_energies(Q, constant))
+    return better + 1
 
 
 def main() -> None:
@@ -86,7 +107,7 @@ def main() -> None:
     if args.plot:
         import matplotlib.pyplot as plt
 
-        plot_prices(problem.data, x, ", Brute Force")
+        plot_prices(problem.data, x, ", Brute Force", f"kurse_brute_force_{problem.n}_{problem.k}.png")
         plt.show()
 
 
